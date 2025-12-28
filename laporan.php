@@ -1,9 +1,9 @@
 <?php
-include 'auth.php';
-include 'config.php';
+include 'auth.php';   // Security check
+include 'config.php'; // Database connection
 
 // SQL Query: Join transactions with members to get the Name
-// We order by Date DESC (Newest first)
+// We order by Date DESC (Newest first) so you see recent activity at the top
 $sql = "SELECT t.*, m.name as member_name, m.id as member_id 
         FROM transactions t 
         JOIN members m ON t.member_id = m.id 
@@ -44,17 +44,30 @@ $result = $conn->query($sql);
         </div>
     </div>
 
+    <?php if(isset($_GET['msg']) && $_GET['msg'] == 'deleted'): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-trash-alt me-2"></i> Data transaksi berhasil dihapus.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'updated'): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i> Data transaksi berhasil diperbarui.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
     <div class="card table-card">
         <div class="card-body p-0">
             <table class="table table-striped table-hover mb-0 align-middle">
                 <thead class="table-dark">
                     <tr>
                         <th class="py-3 ps-4" width="5%">No</th>
-                        <th class="py-3" width="15%">Tanggal</th>
+                        <th class="py-3" width="12%">Tanggal</th>
                         <th class="py-3" width="20%">Nama Anggota</th>
-                        <th class="py-3" width="20%">Jenis Transaksi</th>
+                        <th class="py-3" width="18%">Jenis Transaksi</th>
                         <th class="py-3 text-end" width="15%">Nominal (Rp)</th>
-                        <th class="py-3 pe-4">Keterangan</th>
+                        <th class="py-3">Keterangan</th>
+                        <th class="py-3 text-center" width="10%">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,30 +81,42 @@ $result = $conn->query($sql);
                                 </td>
                                 <td>
                                     <span class="fw-bold text-dark"><?php echo $row['member_name']; ?></span><br>
-                                    <small class="text-muted" style="font-size: 0.85rem;">ID Anggota: <?php echo $row['member_id']; ?></small>
+                                    <small class="text-muted" style="font-size: 0.85rem;">ID: <?php echo $row['member_id']; ?></small>
                                 </td>
                                 <td>
                                     <?php 
-                                    // Visual Badges for different types
+                                    // Visual Badges
                                     $t = $row['type'];
-                                    if($t == 'saving_in') echo '<span class="badge bg-success rounded-pill px-3"><i class="fas fa-arrow-down me-1"></i> Simpanan Masuk</span>';
-                                    elseif($t == 'loan_out') echo '<span class="badge bg-warning text-dark rounded-pill px-3"><i class="fas fa-hand-holding-usd me-1"></i> Pencairan Pinjaman</span>';
-                                    elseif($t == 'loan_pay') echo '<span class="badge bg-info text-dark rounded-pill px-3"><i class="fas fa-check-circle me-1"></i> Bayar Angsuran</span>';
-                                    elseif($t == 'saving_out') echo '<span class="badge bg-danger rounded-pill px-3"><i class="fas fa-arrow-up me-1"></i> Penarikan Tunai</span>';
+                                    if($t == 'saving_in') echo '<span class="badge bg-success rounded-pill px-3">Simpanan Masuk</span>';
+                                    elseif($t == 'loan_out') echo '<span class="badge bg-warning text-dark rounded-pill px-3">Pencairan Pinjaman</span>';
+                                    elseif($t == 'loan_pay') echo '<span class="badge bg-info text-dark rounded-pill px-3">Bayar Angsuran</span>';
+                                    elseif($t == 'saving_out') echo '<span class="badge bg-danger rounded-pill px-3">Penarikan Tunai</span>';
                                     else echo '<span class="badge bg-secondary">'.$t.'</span>';
                                     ?>
                                 </td>
                                 <td class="text-end fw-bold text-dark font-monospace" style="font-size: 1.1rem;">
                                     Rp <?php echo number_format($row['amount'], 0, ',', '.'); ?>
                                 </td>
-                                <td class="pe-4 text-secondary small">
+                                <td class="text-secondary small">
                                     <?php echo $row['description'] ? $row['description'] : '-'; ?>
                                 </td>
+                                
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="transaksi_edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning text-white" title="Edit Data">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="transaksi_hapus.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-danger" title="Hapus Data" onclick="return confirm('Apakah Anda yakin ingin menghapus data transaksi ini? Data tidak dapat dikembalikan.');">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <img src="https://cdn-icons-png.flaticon.com/512/7486/7486777.png" width="80" class="mb-3 opacity-50" alt="No Data">
                                 <p class="text-muted fw-bold">Belum ada data transaksi ditemukan.</p>
                                 <a href="transaksi_tambah.php" class="btn btn-sm btn-outline-primary">Tambah Data Sekarang</a>
