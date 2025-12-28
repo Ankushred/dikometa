@@ -1,4 +1,5 @@
 <?php
+include 'auth.php';
 include 'config.php';
 
 // SQL Query: Join transactions with members to get the Name

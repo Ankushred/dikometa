@@ -1,4 +1,5 @@
 <?php
+include 'auth.php';
 include 'config.php';
 
 // Check if the form was actually submitted

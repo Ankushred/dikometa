@@ -1,4 +1,5 @@
 <?php
+include 'auth.php';
 include 'config.php';
 
 // Fetch Active Members

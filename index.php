@@ -2,6 +2,7 @@
 // ==========================================
 // 1. BACKEND LOGIC (Fetch Data from DB)
 // ==========================================
+include 'auth.php';
 include 'config.php';
 
 // Function to format Rupiah safely
@@ -101,7 +102,7 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             <a href="laporan.php" class="list-group-item list-group-item-action"><i class="fas fa-file-alt"></i> Laporan</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-database"></i> Master Data</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-cogs"></i> Setting</a>
-            <a href="#" class="list-group-item list-group-item-action text-danger mt-4"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="logout.php" class="list-group-item list-group-item-action text-danger mt-4"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
 
