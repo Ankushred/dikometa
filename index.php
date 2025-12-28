@@ -114,9 +114,14 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
         </nav>
 
         <div class="container-fluid px-4 py-4">
-            <div class="alert alert-light border shadow-sm mb-4">
-                <h4 class="alert-heading text-primary">Selamat Datang, Admin!</h4>
-                <p class="mb-0 text-muted">Sistem Informasi Koperasi Digital. Silahkan pilih menu disamping untuk mengoperasikan aplikasi.</p>
+            <div class="alert alert-light border shadow-sm mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="alert-heading text-primary">Selamat Datang, Admin!</h4>
+                    <p class="mb-0 text-muted">Sistem Informasi Koperasi Digital.</p>
+                </div>
+                <a href="transaksi_tambah.php" class="btn btn-primary shadow-sm">
+                    <i class="fas fa-plus-circle me-1"></i> Input Transaksi Baru
+                </a>
             </div>
 
             <div class="row g-3">
