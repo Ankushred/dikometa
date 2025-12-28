@@ -1,17 +1,34 @@
 <?php
-include 'auth.php';   // Security check
-include 'config.php'; // Database connection
+include 'auth.php';
+include 'config.php';
 
-// SQL Query: Join transactions with members to get the Name
-// We order by Date DESC (Newest first) so you see recent activity at the top
+// 1. Check if a category filter was clicked
+$kategori = isset($_GET['kategori']) ? $_GET['kategori'] : '';
+$where_clause = "";
+$title_add = "";
+
+// 2. Build the Logic based on the Sidebar Click
+if ($kategori == 'simpanan') {
+    $where_clause = "WHERE t.type IN ('saving_in', 'saving_out')";
+    $title_add = "- Khusus Simpanan";
+} elseif ($kategori == 'pinjaman') {
+    $where_clause = "WHERE t.type IN ('loan_out', 'loan_pay')";
+    $title_add = "- Khusus Pinjaman";
+} elseif ($kategori == 'kas') {
+    // Shows everything except pure database adjustments (optional)
+    $where_clause = ""; 
+    $title_add = "- Arus Kas";
+}
+
+// 3. The SQL Query (Modified with WHERE clause)
 $sql = "SELECT t.*, m.name as member_name, m.id as member_id 
         FROM transactions t 
         JOIN members m ON t.member_id = m.id 
+        $where_clause
         ORDER BY t.trans_date DESC, t.id DESC";
 
 $result = $conn->query($sql);
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
