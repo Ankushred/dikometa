@@ -98,7 +98,7 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-money-bill-wave"></i> Transaksi Kas</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-wallet"></i> Simpanan</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-hand-holding-usd"></i> Pinjaman</a>
-            <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-file-alt"></i> Laporan</a>
+            <a href="laporan.php" class="list-group-item list-group-item-action"><i class="fas fa-file-alt"></i> Laporan</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-database"></i> Master Data</a>
             <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-cogs"></i> Setting</a>
             <a href="#" class="list-group-item list-group-item-action text-danger mt-4"><i class="fas fa-sign-out-alt"></i> Logout</a>
