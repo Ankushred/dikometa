@@ -275,8 +275,8 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4">
                 <button class="btn btn-light" id="sidebarToggle"><i class="fas fa-bars"></i></button>
                 <div class="ms-auto font-weight-bold text-muted small">
-                    <i class="far fa-calendar-alt me-1"></i> <?php echo date('d F Y'); ?>
-                </div>
+    <i class="far fa-clock me-1"></i> <span id="realtimeClock">Loading...</span>
+</div>
             </nav>
 
             <div class="container-fluid px-4 py-4">
@@ -368,8 +368,7 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Admin System</p>
                             </div>
                             <div class="icon"><i class="fas fa-user-shield"></i></div>
-                            <a href="setting.php" class="small-box-footer">Pengaturan Akun <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="users.php" class="small-box-footer">Lihat Semua User <i class="fas fa-arrow-circle-right"></i></a>
                         </div>
                     </div>
                 </div>
@@ -381,6 +380,29 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        function updateClock() {
+        const now = new Date();
+        
+        // Configuration for format: "28 Desember 2025 20:30:45"
+        const options = { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false // Set to true if you want AM/PM
+        };
+
+        // 'id-ID' sets it to Indonesian (Desember, etc.)
+        // 'en-US' would set it to English (December, etc.)
+        // undefined uses the user's browser default
+        const timeString = now.toLocaleString('id-ID', options); 
+
+        document.getElementById('realtimeClock').innerText = timeString;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
         window.addEventListener('DOMContentLoaded', event => {
             const sidebarToggle = document.body.querySelector('#sidebarToggle');
             if (sidebarToggle) {
