@@ -163,7 +163,7 @@ http://localhost/dikometa
 | Role | Username | Password | Access |
 |-----|---------|----------|--------|
 | Admin | admin | admin0 | Full |
-| Staff | staff | staff0 | Limited |
+| Staff | staff | admin0 | Limited |
 
 ⚠️ **Important:** Change passwords after first login.
 
@@ -217,3 +217,4 @@ dikometa/
 
 ## 📄 License
 This project is open-source and free for **educational purposes only**.
+
