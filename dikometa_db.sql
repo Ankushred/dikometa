@@ -67,15 +67,6 @@ CREATE TABLE `transactions` (
 -- Dumping data for table `transactions`
 --
 
-INSERT INTO `transactions` (`id`, `member_id`, `type`, `amount`, `trans_date`, `description`) VALUES
-(1, 1, 'saving_in', 1500000.00, '2025-12-01', 'Simpanan Wajib'),
-(2, 2, 'saving_in', 1500000.00, '2025-12-05', 'Simpanan Pokok'),
-(3, 0, 'saving_in', 40000000.00, '2025-12-01', 'Modal Awal Koperasi'),
-(4, 1, 'saving_in', 1000000.00, '2025-12-28', ''),
-(5, 1, 'saving_in', 1500000.00, '2025-12-28', ''),
-(7, 2, 'loan_out', 100000.00, '2025-12-28', ''),
-(8, 4, 'loan_out', 100000.00, '2025-12-28', ''),
-(10, 2, 'loan_out', 2000000.00, '2025-12-28', '');
 
 -- --------------------------------------------------------
 
