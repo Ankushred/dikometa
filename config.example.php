@@ -4,7 +4,7 @@ $host = "127.0.0.1"; // Loopback address
 $user = "root";      // Default XAMPP username
 $pass = "";          // Default XAMPP password (empty)
 $db   = "dikometa_db";
-$port = 3307;        // YOUR CUSTOM PORT (Change to 3306 if you didn't change ports)
+$port = 3306;        // YOUR CUSTOM PORT (Change to 3306 if you didn't change ports)
 
 // Create Connection
 $conn = new mysqli($host, $user, $pass, $db, $port);
