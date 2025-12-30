@@ -43,74 +43,113 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
+
+// --- LOAD HEADER ---
+include 'header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Pengaturan Akun - DIKOMETA</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-light">
+<style>
+    .cursor-pointer { cursor: pointer; }
+    .input-group-text { background-color: #f8f9fa; border-right: none; }
+    .form-control { border-left: none; }
+    /* Fix focus border */
+    .input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-radius: 0.375rem;
+    }
+    .input-group:focus-within .input-group-text, 
+    .input-group:focus-within .form-control {
+        border-color: #86b7fe;
+    }
+</style>
 
-<div class="container mt-5">
+<div class="container-fluid px-4">
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <h3 class="fw-bold text-dark"><i class="fas fa-user-cog text-primary me-2"></i> Pengaturan Akun</h3>
+            <p class="text-muted mb-0">Kelola keamanan dan informasi akun Anda.</p>
+        </div>
+        <a href="index.php" class="btn btn-outline-secondary shadow-sm">
+            <i class="fas fa-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8 col-lg-6">
             
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="mb-0"><i class="fas fa-user-cog text-primary"></i> Pengaturan Akun</h4>
-                <a href="index.php" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Dashboard</a>
-            </div>
-
             <?php if ($message): ?>
-                <div class="alert alert-<?php echo $msg_type; ?> alert-dismissible fade show" role="alert">
-                    <?php echo $message; ?>
+                <div class="alert alert-<?php echo $msg_type; ?> alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-<?php echo ($msg_type == 'success') ? 'check-circle' : 'exclamation-circle'; ?> me-2 fa-lg"></i>
+                        <div><?php echo $message; ?></div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 text-dark">Ganti Password Admin</h5>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-lock text-warning me-2"></i> Ganti Password</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="POST">
+                        
                         <div class="mb-3">
-                            <label class="form-label text-muted">Password Lama</label>
-                            <input type="password" name="current_password" class="form-control" required placeholder="Masukkan password saat ini">
+                            <label class="form-label small text-muted fw-bold text-uppercase">Password Lama</label>
+                            <div class="input-group border rounded">
+                                <span class="input-group-text border-0"><i class="fas fa-key text-muted"></i></span>
+                                <input type="password" name="current_password" id="current_pass" class="form-control border-0" required placeholder="Masukkan password saat ini">
+                                <span class="input-group-text border-0 bg-white cursor-pointer" onclick="togglePass('current_pass', this)">
+                                    <i class="far fa-eye text-muted"></i>
+                                </span>
+                            </div>
                         </div>
                         
-                        <hr class="my-4">
+                        <hr class="my-4 border-light">
 
                         <div class="mb-3">
-                            <label class="form-label text-muted">Password Baru</label>
-                            <input type="password" name="new_password" class="form-control" required placeholder="Minimal 6 karakter" minlength="6">
+                            <label class="form-label small text-muted fw-bold text-uppercase">Password Baru</label>
+                            <div class="input-group border rounded">
+                                <span class="input-group-text border-0"><i class="fas fa-lock text-muted"></i></span>
+                                <input type="password" name="new_password" id="new_pass" class="form-control border-0" required placeholder="Minimal 6 karakter" minlength="6">
+                                <span class="input-group-text border-0 bg-white cursor-pointer" onclick="togglePass('new_pass', this)">
+                                    <i class="far fa-eye text-muted"></i>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label text-muted">Konfirmasi Password Baru</label>
-                            <input type="password" name="confirm_password" class="form-control" required placeholder="Ulangi password baru">
+                            <label class="form-label small text-muted fw-bold text-uppercase">Konfirmasi Password</label>
+                            <div class="input-group border rounded">
+                                <span class="input-group-text border-0"><i class="fas fa-check-double text-muted"></i></span>
+                                <input type="password" name="confirm_password" id="confirm_pass" class="form-control border-0" required placeholder="Ulangi password baru">
+                                <span class="input-group-text border-0 bg-white cursor-pointer" onclick="togglePass('confirm_pass', this)">
+                                    <i class="far fa-eye text-muted"></i>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i> Simpan Perubahan
+                            <button type="submit" class="btn btn-primary py-2 fw-bold shadow-sm">
+                                <i class="fas fa-save me-2"></i> Simpan Perubahan
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="card mt-3 border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="bg-light rounded-circle p-3 me-3 text-primary">
-                        <i class="fas fa-user-shield fa-2x"></i>
-                    </div>
-                    <div>
-                        <h6 class="mb-0">Akun Login</h6>
-                        <small class="text-muted">Username: <strong><?php echo $_SESSION['username']; ?></strong></small>
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white rounded-circle p-3 shadow-sm me-3 text-primary">
+                            <i class="fas fa-user-shield fa-lg"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-bold">Akun Login Saat Ini</small>
+                            <h5 class="mb-0 fw-bold text-dark"><?php echo $_SESSION['username']; ?></h5>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Administrator</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -119,6 +158,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script>
+    function togglePass(inputId, iconSpan) {
+        const input = document.getElementById(inputId);
+        const icon = iconSpan.querySelector('i');
+        
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+</script>
+
+<?php 
+// --- LOAD FOOTER ---
+include 'footer.php'; 
+?>

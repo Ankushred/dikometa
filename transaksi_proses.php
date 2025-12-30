@@ -11,6 +11,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount    = $_POST['amount'];
     $date      = $_POST['trans_date'];
     $desc      = $_POST['description'];
+    
+    // Get Current User Info for 'created_by'
+    $user_id   = $_SESSION['user_id']; 
+    $role      = $_SESSION['role'];
 
     // 2. Validate
     if (empty($member_id) || empty($amount)) {
@@ -21,15 +25,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['action']) && $_POST['action'] == 'update') {
 
         // ==========================
-        //  UPDATE LOGIC (Fixed)
+        //  UPDATE LOGIC
         // ==========================
         $id = $_POST['id']; 
-
-        $stmt = $conn->prepare("UPDATE transactions SET member_id=?, type=?, amount=?, trans_date=?, description=? WHERE id=?");
         
-        // FIXED LINE BELOW: changed "isisisi" to "isissi" (6 letters for 6 variables)
-        // i=int, s=string, i=int, s=string, s=string, i=int
-        $stmt->bind_param("isissi", $member_id, $type, $amount, $date, $desc, $id);
+        // Capture Status from the Edit Form
+        // If status is not sent (e.g. slight edit), default to approved or keep existing.
+        // But our Edit form sends it, so we capture it.
+        $status = $_POST['status']; 
+
+        $stmt = $conn->prepare("UPDATE transactions SET member_id=?, type=?, amount=?, trans_date=?, description=?, status=? WHERE id=?");
+        
+        // Types: i=int, s=string, d=double(amount), s=string, s=string, s=string, i=int
+        $stmt->bind_param("isdsssi", $member_id, $type, $amount, $date, $desc, $status, $id);
 
         if ($stmt->execute()) {
             header("Location: laporan.php?msg=updated"); 
@@ -43,13 +51,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // ==========================
         //  INSERT LOGIC
         // ==========================
-        $stmt = $conn->prepare("INSERT INTO transactions (member_id, type, amount, trans_date, description) VALUES (?, ?, ?, ?, ?)");
         
-        // i=int, s=string, i=int, s=string, s=string
-        $stmt->bind_param("isiss", $member_id, $type, $amount, $date, $desc);
+        // MAKER-CHECKER LOGIC:
+        // If Admin adds it -> Auto Approved
+        // If Member adds it -> Pending
+        $status = ($role == 'admin') ? 'approved' : 'pending';
+
+        $stmt = $conn->prepare("INSERT INTO transactions (member_id, type, amount, trans_date, description, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        
+        // Types: i=int, s=string, d=double, s=string, s=string, s=string, i=int
+        $stmt->bind_param("isdsssi", $member_id, $type, $amount, $date, $desc, $status, $user_id);
 
         if ($stmt->execute()) {
-            header("Location: index.php?status=success");
+            if($role == 'admin') {
+                header("Location: index.php?status=success");
+            } else {
+                // If member, send back to member panel
+                header("Location: member_panel.php?status=sent");
+            }
             exit();
         } else {
             echo "Error Inserting: " . $stmt->error;

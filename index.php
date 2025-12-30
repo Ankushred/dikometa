@@ -1,6 +1,7 @@
 <?php
 include 'auth.php';
 include 'config.php';
+checkAdmin(); 
 
 // Function to format Rupiah safely
 function formatRupiah($number)
@@ -9,12 +10,16 @@ function formatRupiah($number)
 }
 
 // ==========================================
+// 0. CHECK PENDING TRANSACTIONS (Notification)
+// ==========================================
+$pending_sql = "SELECT COUNT(*) as total FROM transactions WHERE status='pending'";
+$pending_count = $conn->query($pending_sql)->fetch_assoc()['total'];
+
+// ==========================================
 // 1. CALCULATE SAVINGS (Simpanan Anggota)
 // ==========================================
-// Logic: (Total Money IN) - (Total Money OUT)
-// We calculate the Net Balance. If members withdraw, this number goes down.
-$sql_save_in = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='saving_in'")->fetch_assoc();
-$sql_save_out = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='saving_out'")->fetch_assoc();
+$sql_save_in = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='saving_in' AND status='approved'")->fetch_assoc();
+$sql_save_out = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='saving_out' AND status='approved'")->fetch_assoc();
 
 $save_in = $sql_save_in['total'] ? $sql_save_in['total'] : 0;
 $save_out = $sql_save_out['total'] ? $sql_save_out['total'] : 0;
@@ -23,32 +28,24 @@ $total_savings = $save_in - $save_out;
 // ==========================================
 // 2. CALCULATE LOANS (Pinjaman Kredit)
 // ==========================================
-// Count how many loan transactions exist
-$loan_count_sql = "SELECT COUNT(*) as total FROM transactions WHERE type='loan_out'";
+$loan_count_sql = "SELECT COUNT(*) as total FROM transactions WHERE type='loan_out' AND status='approved'";
 $total_loan_count = $conn->query($loan_count_sql)->fetch_assoc()['total'];
 
-// Count total money currently lent out
-$sql_loan_out = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='loan_out'")->fetch_assoc();
+$sql_loan_out = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='loan_out' AND status='approved'")->fetch_assoc();
 $loan_out_total = $sql_loan_out['total'] ? $sql_loan_out['total'] : 0;
 
-// Count how many UNIQUE people have borrowed money
-$borrower_sql = "SELECT COUNT(DISTINCT member_id) as total FROM transactions WHERE type='loan_out'";
+$borrower_sql = "SELECT COUNT(DISTINCT member_id) as total FROM transactions WHERE type='loan_out' AND status='approved'";
 $total_borrowers = $conn->query($borrower_sql)->fetch_assoc()['total'];
 
 // ==========================================
 // 3. CALCULATE COMPANY CASH (Kas Koperasi)
 // ==========================================
-// Logic: (All Income) - (All Outflow)
-// Income  = Simpanan Masuk + Bayar Angsuran
-// Outflow = Pinjaman Keluar + Penarikan Simpanan + Biaya Lain (Expense)
-
-$sql_loan_pay = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='loan_pay'")->fetch_assoc();
-$sql_expense = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='expense'")->fetch_assoc();
+$sql_loan_pay = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='loan_pay' AND status='approved'")->fetch_assoc();
+$sql_expense = $conn->query("SELECT SUM(amount) as total FROM transactions WHERE type='expense' AND status='approved'")->fetch_assoc();
 
 $loan_pay = $sql_loan_pay['total'] ? $sql_loan_pay['total'] : 0;
 $expense = $sql_expense['total'] ? $sql_expense['total'] : 0;
 
-// The Grand Calculation for the Vault (Kas)
 $total_income = $save_in + $loan_pay;
 $total_expense = $save_out + $loan_out_total + $expense;
 $kas_balance = $total_income - $total_expense;
@@ -82,32 +79,40 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
         body {
             background-color: var(--primary-bg);
             font-family: 'Segoe UI', sans-serif;
-            overflow-x: hidden;
+            overflow-x: hidden; 
         }
 
-        /* Sidebar Styling */
+        /* --- RESPONSIVE SIDEBAR CSS --- */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Note: Make sure sidebar.php has the id="sidebar-wrapper" and correct classes */
         #sidebar-wrapper {
             min-height: 100vh;
-            margin-left: -15rem;
+            margin-left: -15rem; 
             transition: margin .25s ease-out;
             background-color: #343a40;
             color: #fff;
+            width: 15rem;
+            flex-shrink: 0; 
         }
 
         #sidebar-wrapper .sidebar-heading {
-            padding: 1rem 1.25rem;
+            padding: 1.2rem 1.25rem;
             font-size: 1.2rem;
             font-weight: bold;
             background: #17a2b8;
             color: white;
-        }
-
-        #sidebar-wrapper .list-group {
-            width: 15rem;
+            white-space: nowrap; 
         }
 
         #page-content-wrapper {
-            min-width: 100vw;
+            flex-grow: 1; 
+            min-width: 0; 
+            width: 100%;
             transition: margin .25s ease-out;
         }
 
@@ -117,11 +122,10 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
 
         @media (min-width: 768px) {
             #sidebar-wrapper {
-                margin-left: 0;
+                margin-left: 0; 
             }
 
             #page-content-wrapper {
-                min-width: 0;
                 width: 100%;
             }
 
@@ -136,6 +140,7 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             padding: 15px 20px;
             background-color: #343a40;
             color: #cfd8dc;
+            border-left: 4px solid transparent;
         }
 
         .list-group-item:hover {
@@ -144,9 +149,10 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
         }
 
         .list-group-item.active {
-            background-color: #17a2b8;
-            color: white;
+            background-color: #2c3034;
+            color: #17a2b8;
             font-weight: bold;
+            border-left: 4px solid #17a2b8;
         }
 
         .list-group-item i {
@@ -155,21 +161,21 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             margin-right: 10px;
         }
 
-        /* Card Styling (Small Box) */
+        /* --- MODERN CARD STYLING --- */
         .small-box {
-            border-radius: 0.5rem;
+            border-radius: 10px;
             position: relative;
             display: block;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
             color: #fff;
             overflow: hidden;
-            transition: transform 0.3s;
+            transition: all 0.3s ease;
         }
 
         .small-box:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
         }
 
         .small-box .inner {
@@ -186,24 +192,27 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
 
         .small-box p {
             font-size: 1rem;
+            margin-bottom: 0;
+            opacity: 0.9;
         }
 
         .small-box .icon {
             position: absolute;
             top: -10px;
-            right: 10px;
+            right: 15px;
             z-index: 0;
-            font-size: 90px;
+            font-size: 80px;
             color: rgba(0, 0, 0, 0.15);
         }
 
         .small-box-footer {
             background: rgba(0, 0, 0, 0.1);
             display: block;
-            padding: 5px;
+            padding: 8px;
             text-align: center;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
+            font-weight: 600;
         }
 
         .small-box-footer:hover {
@@ -211,89 +220,63 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
             background: rgba(0, 0, 0, 0.2);
         }
 
-        /* Colors */
-        .bg-orange {
-            background: linear-gradient(45deg, #ffc107, #ffca2c);
-            color: #fff;
-        }
+        /* COLORS */
+        .bg-orange { background: linear-gradient(45deg, #ffc107, #ffca2c); }
+        .bg-green  { background: linear-gradient(45deg, #28a745, #20c997); }
+        .bg-purple { background: linear-gradient(45deg, #6f42c1, #e83e8c); }
+        .bg-blue   { background: linear-gradient(45deg, #007bff, #0056b3); }
+        .bg-red    { background: linear-gradient(45deg, #dc3545, #c82333); }
+        .bg-cyan   { background: linear-gradient(45deg, #17a2b8, #38c1d2); }
 
-        .bg-green {
-            background: linear-gradient(45deg, #28a745, #20c997);
-        }
-
-        .bg-purple {
-            background: linear-gradient(45deg, #6f42c1, #e83e8c);
-        }
-
-        .bg-blue {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-        }
-
-        .bg-red {
-            background: linear-gradient(45deg, #dc3545, #c82333);
-        }
-
-        .bg-cyan {
-            background: linear-gradient(45deg, #17a2b8, #38c1d2);
-        }
     </style>
 </head>
 
 <body>
 
     <div class="d-flex" id="wrapper">
-        <div class="border-end" id="sidebar-wrapper">
-            <div class="sidebar-heading"><i class="fas fa-university me-2"></i> DIKOMETA</div>
-            <div class="list-group list-group-flush">
-                <a href="index.php" class="list-group-item list-group-item-action active"><i class="fas fa-home"></i>
-                    Beranda</a>
-
-                <a href="laporan.php?kategori=kas" class="list-group-item list-group-item-action"><i
-                        class="fas fa-money-bill-wave"></i> Transaksi Kas</a>
-
-                <a href="laporan.php?kategori=simpanan" class="list-group-item list-group-item-action"><i
-                        class="fas fa-wallet"></i> Simpanan</a>
-
-                <a href="laporan.php?kategori=pinjaman" class="list-group-item list-group-item-action"><i
-                        class="fas fa-hand-holding-usd"></i> Pinjaman</a>
-
-                <a href="laporan.php" class="list-group-item list-group-item-action"><i class="fas fa-file-alt"></i>
-                    Laporan Lengkap</a>
-
-                <a href="anggota.php" class="list-group-item list-group-item-action"><i class="fas fa-database"></i>
-                    Master Data</a>
-
-                <a href="setting.php" class="list-group-item list-group-item-action"><i class="fas fa-cogs"></i>
-                    Setting</a>
-
-                <a href="logout.php" class="list-group-item list-group-item-action text-danger mt-4"><i
-                        class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
-        </div>
+        
+        <?php include 'sidebar.php'; ?>
 
         <div id="page-content-wrapper">
-            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4">
-                <button class="btn btn-light" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-                <div class="ms-auto font-weight-bold text-muted small">
-    <i class="far fa-clock me-1"></i> <span id="realtimeClock">Loading...</span>
-</div>
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-3 px-lg-4">
+                <div class="d-flex align-items-center w-100">
+                    <button class="btn btn-light me-3" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                    <div class="ms-auto font-weight-bold text-muted small">
+                        <i class="far fa-clock me-1"></i> <span id="realtimeClock">Loading...</span>
+                    </div>
+                </div>
             </nav>
 
-            <div class="container-fluid px-4 py-4">
-                <div class="alert alert-light border shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="alert-heading text-primary">Selamat Datang, <?php echo $_SESSION['username']; ?>!
-                        </h4>
-                        <p class="mb-0 text-muted">Ringkasan keuangan Koperasi DIKOMETA secara Real-time.</p>
+            <div class="container-fluid px-3 px-lg-4 py-4">
+
+                <?php if($pending_count > 0): ?>
+                <div class="alert alert-warning border-start border-5 border-warning shadow-sm d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning d-none d-md-block"></i>
+                        <div>
+                            <strong>Perhatian!</strong><br class="d-md-none"> Terdapat <?php echo $pending_count; ?> transaksi baru.
+                        </div>
                     </div>
-                    <a href="transaksi_tambah.php" class="btn btn-primary shadow-sm">
-                        <i class="fas fa-plus-circle me-1"></i> Input Transaksi Baru
+                    <a href="admin_approval.php" class="btn btn-warning btn-sm text-dark fw-bold shadow-sm text-nowrap ms-2">
+                        Proses <i class="fas fa-arrow-right ms-1"></i>
                     </a>
+                </div>
+                <?php endif; ?>
+
+                <div class="card border-0 shadow-sm mb-4 bg-white">
+                    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center p-4">
+                        <div class="mb-3 mb-md-0">
+                            <h4 class="text-primary fw-bold">Selamat Datang, <?php echo $_SESSION['username']; ?>!</h4>
+                            <p class="mb-0 text-muted">Ringkasan keuangan Koperasi DIKOMETA secara Real-time.</p>
+                        </div>
+                        <a href="transaksi_tambah.php" class="btn btn-primary shadow-sm fw-bold">
+                            <i class="fas fa-plus-circle me-1"></i> Input Transaksi
+                        </a>
+                    </div>
                 </div>
 
                 <div class="row g-3">
-
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-orange">
                             <div class="inner">
                                 <h5>Pinjaman Kredit</h5>
@@ -301,12 +284,11 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Dana Keluar: Rp <?php echo formatRupiah($loan_out_total); ?></p>
                             </div>
                             <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
-                            <a href="laporan.php?kategori=pinjaman" class="small-box-footer">Lihat Detail <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="laporan.php?kategori=pinjaman" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
 
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-green">
                             <div class="inner">
                                 <h5>Simpanan Anggota</h5>
@@ -314,12 +296,11 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Saldo Bersih (Masuk - Keluar)</p>
                             </div>
                             <div class="icon"><i class="fas fa-wallet"></i></div>
-                            <a href="laporan.php?kategori=simpanan" class="small-box-footer">Lihat Detail <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="laporan.php?kategori=simpanan" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
 
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-purple">
                             <div class="inner">
                                 <h5>Kas Koperasi</h5>
@@ -327,14 +308,13 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Total Uang Tunai di Brankas</p>
                             </div>
                             <div class="icon"><i class="fas fa-vault"></i></div>
-                            <a href="laporan.php?kategori=kas" class="small-box-footer">Lihat Detail <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="laporan.php?kategori=kas" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
                 </div>
 
-                <div class="row g-3 mt-2">
-                    <div class="col-lg-4 col-md-6">
+                <div class="row g-3 mt-1">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-blue">
                             <div class="inner">
                                 <h5>Data Anggota</h5>
@@ -342,25 +322,23 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Anggota Status Aktif</p>
                             </div>
                             <div class="icon"><i class="fas fa-users"></i></div>
-                            <a href="anggota.php" class="small-box-footer">Kelola Anggota <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="anggota.php" class="small-box-footer">Kelola Anggota <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
 
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-red">
                             <div class="inner">
                                 <h5>Data Peminjam</h5>
                                 <h3><?php echo $total_borrowers; ?> <sup style="font-size: 20px">Org</sup></h3>
-                                <p>Anggota yang pernah meminjam</p>
+                                <p>Anggota dengan Pinjaman</p>
                             </div>
                             <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <a href="laporan.php?kategori=pinjaman" class="small-box-footer">Lihat Peminjam <i
-                                    class="fas fa-arrow-circle-right"></i></a>
+                            <a href="laporan.php?kategori=pinjaman" class="small-box-footer">Lihat Peminjam <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
 
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <div class="small-box bg-cyan">
                             <div class="inner">
                                 <h5>Data Pengguna</h5>
@@ -368,7 +346,7 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
                                 <p>Admin System</p>
                             </div>
                             <div class="icon"><i class="fas fa-user-shield"></i></div>
-                            <a href="users.php" class="small-box-footer">Lihat Semua User <i class="fas fa-arrow-circle-right"></i></a>
+                            <a href="users.php" class="small-box-footer">Lihat Semua User <i class="fas fa-arrow-circle-right ms-1"></i></a>
                         </div>
                     </div>
                 </div>
@@ -381,28 +359,17 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
 
     <script>
         function updateClock() {
-        const now = new Date();
-        
-        // Configuration for format: "28 Desember 2025 20:30:45"
-        const options = { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit',
-            hour12: false // Set to true if you want AM/PM
-        };
+            const now = new Date();
+            const options = { 
+                day: 'numeric', month: 'long', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+            };
+            document.getElementById('realtimeClock').innerText = now.toLocaleString('id-ID', options); 
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
 
-        // 'id-ID' sets it to Indonesian (Desember, etc.)
-        // 'en-US' would set it to English (December, etc.)
-        // undefined uses the user's browser default
-        const timeString = now.toLocaleString('id-ID', options); 
-
-        document.getElementById('realtimeClock').innerText = timeString;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
+        // Sidebar Toggle Script
         window.addEventListener('DOMContentLoaded', event => {
             const sidebarToggle = document.body.querySelector('#sidebarToggle');
             if (sidebarToggle) {
@@ -415,5 +382,4 @@ $total_users = $conn->query($user_sql)->fetch_assoc()['total'];
     </script>
 
 </body>
-
 </html>
